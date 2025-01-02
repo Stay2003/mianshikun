@@ -1,13 +1,11 @@
 package com.yupi.mianshikun.model.vo;
 
-import cn.hutool.json.JSONUtil;
 import com.yupi.mianshikun.model.entity.QuestionBank;
 import lombok.Data;
 import org.springframework.beans.BeanUtils;
 
 import java.io.Serializable;
 import java.util.Date;
-import java.util.List;
 
 /**
  * 题库视图
@@ -29,9 +27,14 @@ public class QuestionBankVO implements Serializable {
     private String title;
 
     /**
-     * 内容
+     * 描述
      */
-    private String content;
+    private String description;
+
+    /**
+     * 图片
+     */
+    private String picture;
 
     /**
      * 创建用户 id
@@ -47,11 +50,6 @@ public class QuestionBankVO implements Serializable {
      * 更新时间
      */
     private Date updateTime;
-
-    /**
-     * 标签列表
-     */
-    private List<String> tagList;
 
     /**
      * 创建用户信息
@@ -70,8 +68,8 @@ public class QuestionBankVO implements Serializable {
         }
         QuestionBank questionBank = new QuestionBank();
         BeanUtils.copyProperties(questionBankVO, questionBank);
-        List<String> tagList = questionBankVO.getTagList();
-        questionBank.setTags(JSONUtil.toJsonStr(tagList));
+//        List<String> tagList = questionBankVO.getTagList();
+//        questionBank.setTags(JSONUtil.toJsonStr(tagList));
         return questionBank;
     }
 
@@ -87,7 +85,7 @@ public class QuestionBankVO implements Serializable {
         }
         QuestionBankVO questionBankVO = new QuestionBankVO();
         BeanUtils.copyProperties(questionBank, questionBankVO);
-        questionBankVO.setTagList(JSONUtil.toList(questionBank.getTags(), String.class));
+//        questionBankVO.setTagList(JSONUtil.toList(questionBank.getTags(), String.class));
         return questionBankVO;
     }
 }
