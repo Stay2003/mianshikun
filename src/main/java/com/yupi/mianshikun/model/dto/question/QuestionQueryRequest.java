@@ -57,5 +57,7 @@ public class QuestionQueryRequest extends PageRequest implements Serializable {
      */
     private String answer;
 
+    private Long questionBankId;
+
     private static final long serialVersionUID = 1L;
 }

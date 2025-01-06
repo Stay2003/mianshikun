@@ -1,18 +1,26 @@
 package com.yupi.mianshikun.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.yupi.mianshikun.annotation.AuthCheck;
+import com.yupi.mianshikun.common.BaseResponse;
 import com.yupi.mianshikun.common.ErrorCode;
+import com.yupi.mianshikun.common.ResultUtils;
 import com.yupi.mianshikun.constant.CommonConstant;
+import com.yupi.mianshikun.constant.UserConstant;
 import com.yupi.mianshikun.exception.ThrowUtils;
 import com.yupi.mianshikun.mapper.QuestionMapper;
 import com.yupi.mianshikun.model.dto.question.QuestionQueryRequest;
 import com.yupi.mianshikun.model.entity.Question;
+import com.yupi.mianshikun.model.entity.QuestionBankQuestion;
 import com.yupi.mianshikun.model.entity.User;
 import com.yupi.mianshikun.model.vo.QuestionVO;
 import com.yupi.mianshikun.model.vo.UserVO;
+import com.yupi.mianshikun.service.QuestionBankQuestionService;
 import com.yupi.mianshikun.service.QuestionService;
 import com.yupi.mianshikun.service.UserService;
 import com.yupi.mianshikun.utils.SqlUtils;
@@ -20,6 +28,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -40,6 +50,9 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private QuestionBankQuestionService questionBankQuestionService;
 
     /**
      * 校验数据
@@ -218,6 +231,40 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
 
         questionVOPage.setRecords(questionVOList);
         return questionVOPage;
+    }
+
+    /**
+     * 分页获取题目列表
+     *
+     * @param questionQueryRequest
+     * @return
+     */
+    //todo 记得查看
+    @Override
+    public Page<Question> listQuestionByPage(QuestionQueryRequest questionQueryRequest) {
+        //获取当前页码和页大小
+        long current = questionQueryRequest.getCurrent();
+        long size = questionQueryRequest.getPageSize();
+
+        //构建一个查询条件,如果传入了题库 ID (questionBankId),则只查询该题库中的题目。
+        QueryWrapper<Question> queryWrapper = this.getQueryWrapper(questionQueryRequest);
+        Long questionBankId = questionQueryRequest.getQuestionBankId();
+        if (questionBankId != null) {
+            //查询题库内题目的id
+            LambdaQueryWrapper<QuestionBankQuestion> lambdaQueryWrapper = Wrappers.lambdaQuery(QuestionBankQuestion.class)
+                    .select(QuestionBankQuestion::getQuestionId)
+                    .eq(QuestionBankQuestion::getQuestionBankId, questionBankId);
+            List<QuestionBankQuestion> questionList = questionBankQuestionService.list(lambdaQueryWrapper);
+
+            if (CollUtil.isNotEmpty(questionList)) {
+                Set<Long> questionIdSet = questionList.stream().map(QuestionBankQuestion::getQuestionId)
+                        .collect(Collectors.toSet());
+                queryWrapper.in("id", questionIdSet);
+            }
+        }
+        // 查询数据库
+        Page<Question> questionPage = this.page(new Page<>(current, size), queryWrapper);
+        return questionPage;
     }
 
 }
